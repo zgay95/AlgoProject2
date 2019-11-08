@@ -1,27 +1,13 @@
 #include "Matrix.hpp"
 
 #include <iostream>
-#include <fstream>
-#include <limits>
+#include <string>
 #include <algorithm>
 
+/**
+ * 
+ */
 Matrix::Matrix()
-{
-    readInMatrix();
-}
-
-Matrix::~Matrix()
-{
-    if (matrix != nullptr) {
-        delete[] matrix;
-    }
-
-    if (memo != nullptr) {
-        delete[] memo;
-    }
-}
-
-void Matrix::readInMatrix()
 {
     const std::string fileName = "input.txt";
     std::ifstream input(fileName);
@@ -30,43 +16,121 @@ void Matrix::readInMatrix()
         input >> rows;
         input >> cols;
 
-        matrix = new int[rows * cols];
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++) {
-                input >> matrix[index(i, j)];
-            }
-        }
-
+        initMatrix(input);
         initMemo();
-
-        std::cout << "Successfully read in matrix!\n";
-    } 
+    }
     else {
-        throw std::runtime_error("Error opening " + fileName + ". Ensure file is in the proper directory and run again.\n");
+        throw std::runtime_error("Error opening " + fileName + 
+        ". Ensure file is in the proper directory and run again.\n");
     }
 }
 
-int Matrix::memoCalcMaxSum(const int j, const int oldRow, const int newRow)
+/**
+ * 
+ */
+Matrix::~Matrix()
+{
+    deleteMatrix();
+    deleteMemo();
+}
+
+/**
+ * 
+ */
+void Matrix::initMatrix(std::ifstream &input)
+{
+    matrix = new int[rows * cols];
+
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            input >> matrix[index(i, j)];
+        }
+    }
+}
+
+/**
+ * 
+ */
+void Matrix::initMemo()
+{
+    memo = new MemoElement[cols * rows * rows];
+
+    for (int i = 0; i < cols; i++) {
+        for (int j = 0; j < rows; j++) {
+            for (int k = 0; k < rows; k++) {
+                memo[index(i, j, k)] = sentinelVal;
+            }
+        }
+    }
+}
+
+/**
+ * 
+ */
+void Matrix::deleteMatrix()
+{
+    if (matrix != nullptr) {
+        delete[] matrix;
+    }
+}
+
+/**
+ * 
+ */
+void Matrix::deleteMemo()
+{
+    if (memo != nullptr) {
+        delete[] memo;
+    }
+}
+
+/**
+ * 
+ */
+int Matrix::memoCalcMaxSum(const int &j, const int &oldRow, const int &newRow)
 {
     if (j < cols) {
-        if (memo[index(j, oldRow, newRow)] > sentinelVal) {
-            return memo[index(j, oldRow, newRow)];
+        if (memo[index(j, oldRow, newRow)].val > sentinelVal) {
+            return memo[index(j, oldRow, newRow)].val;
         }
 
-        int *tempArr = new int[rows];
+        MemoElement *tempArr = new MemoElement[rows];
         for (int i = 0; i < rows; i++) {
-            tempArr[i] = matrix[index(i, j)] - calcPenalty(i, oldRow, newRow) + memoCalcMaxSum(j + 1, newRow, i);
+            tempArr[i] = MemoElement(
+                matrix[index(i, j)] - calcPenalty(i, oldRow, newRow) + memoCalcMaxSum(j + 1, newRow, i),
+                i,
+                newRow);
         }
-        memo[index(j, oldRow, newRow)] = *(std::max_element(tempArr, tempArr + rows));
+
+        MemoElement *maxElem = std::max_element(tempArr, tempArr + rows);
+        memo[index(j, oldRow, newRow)] = *maxElem;
+
         delete[] tempArr;
-        return memo[index(j, oldRow, newRow)];
+
+        return memo[index(j, oldRow, newRow)].val;
     }
     return 0;
 }
 
+/**
+ * 
+ */
+void Matrix::writeOutSolution()
+{
+    const std::string fileName = "output.txt";
+    std::ofstream output(fileName);
+
+    output << memoCalcMaxSum(0, 0, 0) << "\n";
+
+}
+
+/**
+ * 
+ */
 void Matrix::printMatrix()
 {
-    std::cout << memoCalcMaxSum(0, 0, 0) << "\n";
+    std::cout << "Max Sum: " << memoCalcMaxSum(0, 0, 0) << "\n";
+
     for (int i = 0; i < rows; i++) {
         std::cout << "[";
         for (int j = 0; j < cols; j++) {
@@ -82,6 +146,9 @@ void Matrix::printMatrix()
     std::cout << "\n";
 }
 
+/**
+ * 
+ */
 void Matrix::printMemo()
 {
     for (int i = 0; i < cols; i++) {
@@ -89,50 +156,54 @@ void Matrix::printMemo()
         for (int j = 0; j < rows; j++) {
             std::cout << "[";
             for (int k = 0; k < rows; k++) {
+                std::string outputVal = memo[index(i, j, k)].val == sentinelVal ? 
+                    "-oo" : std::to_string(memo[index(i, j, k)].val);
+
                 if (k != rows - 1) {
-                    std::cout << memo[index(i, j, k)] << ", ";
+                    std::cout << "[" << outputVal << ", " 
+                    << memo[index(i, j, k)].oldRow << ", " 
+                    << memo[index(i, j, k)].newRow << "], ";
                 } 
                 else {
-                    std::cout << memo[index(i, j, k)];
+                    std::cout << "[" << outputVal << ", " 
+                    << memo[index(i, j, k)].oldRow << ", " 
+                    << memo[index(i, j, k)].newRow << "]";
                 }
             }
             std::cout << "]";
+            
             if (j != rows - 1) {
                 std::cout << ", ";
             } 
-
         }
         std::cout << "]\n";
     }
     std::cout << "\n";
 }
 
-void Matrix::initMemo()
+/**
+ * 
+ */
+const int Matrix::calcPenalty(const int &currRow, const int &oldRow, const int &newRow)
 {
-    memo = new int[cols * rows * rows];
-    for (int i = 0; i < cols; i++) {
-        for (int j = 0; j < rows; j++) {
-            for (int k = 0; k < rows; k++) {
-                memo[index(i, j, k)] = sentinelVal;
-            }
-        }
-    }
-}
-
-const int Matrix::calcPenalty(const int currRow, const int oldRow, const int newRow)
-{
-    int minRow = std::min(oldRow, newRow);
-    int maxRow = std::max(oldRow, newRow);
+    const int minRow = std::min(oldRow, newRow);
+    const int maxRow = std::max(oldRow, newRow);
 
     return 2 * ((currRow < minRow) ? (minRow - currRow) : 
                 (currRow > maxRow) ? (currRow - maxRow) : 0);
 }
 
+/**
+ * 
+ */
 const size_t Matrix::index(const int &i, const int &j)
 {
     return (i * cols) + j;
 }
 
+/**
+ * 
+ */
 const size_t Matrix::index(const int &i, const int &j, const int &k)
 {
     return (i * rows * rows) + (j * rows) + k;
