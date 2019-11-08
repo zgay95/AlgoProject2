@@ -102,8 +102,7 @@ int Matrix::memoCalcMaxSum(const int &j, const int &oldRow, const int &newRow)
                 newRow);
         }
 
-        MemoElement *maxElem = std::max_element(tempArr, tempArr + rows);
-        memo[index(j, oldRow, newRow)] = *maxElem;
+        memo[index(j, oldRow, newRow)] = *std::max_element(tempArr, tempArr + rows);
 
         delete[] tempArr;
 
