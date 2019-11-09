@@ -90,8 +90,7 @@ void Matrix::deleteMemo()
 /**
  * memoCalcMaxScore: Calculates the maximum possible score possible for the input matrix.
  *                   This function is based on the reccurrence described in our project report
- *                   submitted with this code. Refer to the report for more detail.
- *                   
+ *                   submitted with this code. Refer to the report for more detail.        
  */
 int Matrix::memoCalcMaxScore(const int &j, const int &oldRow, const int &newRow)
 {
