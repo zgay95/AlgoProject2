@@ -3,8 +3,7 @@
 int main()
 {
     Matrix matrix;
-    matrix.printMatrix();
-    matrix.printMemo();
+    matrix.memoCalcMaxScore(0, 0, 0);
     matrix.writeOutSolution();
     return 0;
 }
