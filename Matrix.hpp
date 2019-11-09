@@ -3,6 +3,7 @@
 
 #include <limits>
 #include <fstream>
+#include <string>
 
 class Matrix {
 private:
@@ -34,8 +35,7 @@ public:
     Matrix();
     ~Matrix();
     void writeOutSolution();
-    int memoCalcMaxSum(const int &j, const int &oldRow, const int &newRow);
-    int iterCalcMaxSum();
+    int memoCalcMaxScore(const int &j, const int &oldRow, const int &newRow);
     void printMatrix();
     void printMemo();
     
@@ -45,7 +45,7 @@ private:
     void deleteMatrix();
     void deleteMemo();
     const int calcPenalty(const int &currRow, const int &oldRow, const int &newRow);
-
+    void pathToMaxScore(std::ofstream &output);
     const size_t index(const int &i, const int &j);
     const size_t index(const int &i, const int &j, const int &k);
 
