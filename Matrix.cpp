@@ -29,7 +29,7 @@ Matrix::Matrix()
 }
 
 /**
- * 
+ * Destructor: Deletes the data members located in the heap.
  */
 Matrix::~Matrix()
 {
