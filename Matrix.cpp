@@ -56,9 +56,9 @@ void Matrix::initMatrix(std::ifstream &input)
  */
 void Matrix::initMemo()
 {
-    memo = new MemoElement[cols * rows * rows];
+    memo = new MemoElement[(cols + 1) * rows * rows];
 
-    for (int i = 0; i < cols; i++) {
+    for (int i = 0; i < cols + 1; i++) {
         for (int j = 0; j < rows; j++) {
             for (int k = 0; k < rows; k++) {
                 memo[index(i, j, k)] = sentinelVal;
@@ -92,36 +92,75 @@ void Matrix::deleteMemo()
  *                   This function is based on the reccurrence described in our project report
  *                   submitted with this code. Refer to the report for more detail.        
  */
-int Matrix::memoCalcMaxScore(const int &j, const int &oldRow, const int &newRow)
+int Matrix::memoCalcMaxScore(const int &col, const int &oldRow, const int &newRow)
 {
     // Recursive check, make sure not out of bounds of matrix.
-    if (j < cols) {
+    if (col < cols) {
         // If the current reccurrence has already been calculated, return it.
-        if (memo[index(j, oldRow, newRow)].val > sentinelVal) {
-            return memo[index(j, oldRow, newRow)].val;
+        if (memo[index(col, oldRow, newRow)].val > sentinelVal) {
+            return memo[index(col, oldRow, newRow)].val;
         }
 
         // Set up a temporary array to store all paths from the current column.
         MemoElement *tempArr = new MemoElement[rows];
-        for (int i = 0; i < rows; i++) {
+        for (int row = 0; row < rows; row++) {
             // Recursively trace every path for every element in the current column.
-            tempArr[i] = MemoElement(
-                matrix[index(i, j)] - calcPenalty(i, oldRow, newRow) + memoCalcMaxScore(j + 1, newRow, i),
+            tempArr[row] = MemoElement(
+                matrix[index(row, col)] - calcPenalty(row, oldRow, newRow) + memoCalcMaxScore(col + 1, newRow, row),
                 newRow,
-                i);
+                row);
         }
 
         // Find the path which resulted in the max score, store it in memo.
-        memo[index(j, oldRow, newRow)] = *std::max_element(tempArr, tempArr + rows);
+        memo[index(col, oldRow, newRow)] = *std::max_element(tempArr, tempArr + rows);
 
         delete[] tempArr;
         
-        return memo[index(j, oldRow, newRow)].val;
+        return memo[index(col, oldRow, newRow)].val;
     }
 
     // If we are outside the range of columns, then simply return 0, to not effect prior recursive calls.
-    return 0;
+    memo[index(col, oldRow, newRow)].val = 0;
+    return memo[index(col, oldRow, newRow)].val;
 }
+
+/**
+ * iterCalcMaxScore: Calculates the maximum possible score possible for the input matrix.
+ *                   This function is based on the iterating through the memo data structure
+ *                   opposite the recursive dependencies of the recurrence described in our
+ *                   project report submitted with this code. Refer to the report for more detail.
+ */
+int Matrix::iterCalcMaxScore()
+{
+    if (memo[index(0, 0, 0)].val > sentinelVal) {
+        return memo[index(0, 0, 0)].val;
+    }
+
+    for (int col = cols; col >= 0; col--) {
+        for (int oldRow = 0; oldRow < rows; oldRow++) {
+            for (int newRow = 0; newRow < rows; newRow++) {
+                if (col == cols) {
+                    memo[index(col, oldRow, newRow)].val = 0;
+                }
+                else {
+                    MemoElement *tempArr = new MemoElement[rows];
+                    for (int row = 0; row < rows; row++) {
+                        tempArr[row] = MemoElement(matrix[index(row, col)] - calcPenalty(row, oldRow, newRow) + memo[index(col + 1, newRow, row)].val,
+                            newRow,
+                            row);
+                    }
+
+                    memo[index(col, oldRow, newRow)] = *std::max_element(tempArr, tempArr + rows);
+
+                    delete[] tempArr;
+                }
+            }
+        }
+    }
+
+    return memo[index(0, 0, 0)].val;
+}
+
 
 /**
  * calcPenalty: Calculate the penalty to move to the current row based
@@ -162,7 +201,7 @@ void Matrix::pathToMaxScore(std::ofstream &output)
     for (int i = 0; i < cols; i++) {
         output << memo[index(i, oldRow, newRow)].newRow << " ";
 
-        // Use the oldRow and newRow MemoElement members to trace the next matrix element.
+        // Use the oldRow and newRow MemoElement members to trace the next matrix element taken.
         temp = oldRow;
         oldRow = memo[index(i, oldRow, newRow)].oldRow;
         newRow = memo[index(i, temp, newRow)].newRow;
@@ -194,7 +233,9 @@ void Matrix::printMatrix()
  */
 void Matrix::printMemo()
 {
-    for (int i = 0; i < cols; i++) {
+    std::cout << "Max Sum: " << memo[index(0, 0, 0)].val << "\n";
+
+    for (int i = 0; i < cols + 1; i++) {
         std::cout << "[";
         for (int j = 0; j < rows; j++) {
             std::cout << "[";
