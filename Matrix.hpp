@@ -35,7 +35,8 @@ public:
     Matrix();
     ~Matrix();
     void writeOutSolution();
-    int memoCalcMaxScore(const int &j, const int &oldRow, const int &newRow);
+    int memoCalcMaxScore(const int &col, const int &oldRow, const int &newRow);
+    int iterCalcMaxScore();
     void printMatrix();
     void printMemo();
     
